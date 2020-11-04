@@ -4,8 +4,8 @@ Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
-    Runtime: "nodejs10.x"
-    Handler: "index.handler"
+    Handler: "app.lambda_handler"
+    Runtime: "python3.8"
 
 Resources:
   EdgeLambdaMyBasicRole:
@@ -35,16 +35,19 @@ Resources:
       CodeUri: "ViewerRequest/"
       AutoPublishAlias: "prod"
       MemorySize: 128
-      Timeout: 1
+      Timeout: 5
       Role: !GetAtt EdgeLambdaMyBasicRole.Arn
 
   OriginResponse:
     Type: "AWS::Serverless::Function"
     Properties:
       FunctionName: "ImgResizerOriginResponse"
+      # sharpライブラリに依存するためNodeJSのラインタイムを使います
+      Runtime: "nodejs12.x"
+      Handler: "index.handler"      
       Description: "create resized image if not exists"
       CodeUri: "OriginResponse/"
       AutoPublishAlias: "prod"
       MemorySize: 512
-      Timeout: 5
+      Timeout: 10
       Role: !GetAtt EdgeLambdaMyBasicRole.Arn

@@ -9,8 +9,13 @@ const Sharp = require('sharp');
 // 参考： https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
 
 // set the S3 endpoints
-const BUCKET = 'study-cf-origin-us-east-1-756298751873';
+const BUCKET = 'XXXXXXXX';
 
+const CACHE_CONTROL = 'max-age=31536000';
+
+/**
+ * OriginResponseFunction.
+ */
 exports.handler = async (event, context, callback) => {
   let response = event.Records[0].cf.response;
 
@@ -77,7 +82,7 @@ exports.handler = async (event, context, callback) => {
       Body: sharpedBuff,
       Bucket: BUCKET,
       ContentType: 'image/' + requiredFormat,
-      CacheControl: 'max-age=31536000',
+      CacheControl: CACHE_CONTROL,
       Key: key,
       StorageClass: 'STANDARD'
     }).promise();
@@ -87,10 +92,19 @@ exports.handler = async (event, context, callback) => {
     return;
   }
 
+  console.log('resized:', originalKey);
+  // console.log('s3Data', s3Data);
+
   // generate a binary response with resized image
   response.status = '200';
   response.body = sharpedBuff.toString('base64');
   response.bodyEncoding = 'base64';
   response.headers['content-type'] = [{ key: 'Content-Type', value: 'image/' + requiredFormat }];
+
+  // 固定のCache-Controlを設定して返却 (この情報を設定しないと、一度取得した画像も毎回エッジロケーションに取りに行ってしまいHTTPStatusが200になる。期待する動作は304になってブラウザキャッシュが効くこと)
+  response.headers['cache-control'] = [{ key: 'Cache-Control', value: CACHE_CONTROL }];
+  response.headers['etag'] = [{ key: 'etag', value: s3Data.ETag }];
+  response.headers['last-modified'] = [{ key: 'Last-Modified', value: s3Data.LastModified }];
+  
   callback(null, response);
 };

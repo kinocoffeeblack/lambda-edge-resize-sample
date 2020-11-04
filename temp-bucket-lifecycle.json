@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "Filter": {
+          "Prefix": ""
+      },
+      "Status": "Enabled",
+      "Expiration": {
+          "Days": 7
+      },
+      "ID": "Remove old"
+    }
+  ]
+}
